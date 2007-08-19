@@ -1,0 +1,9 @@
+Name:                   irc
+Version:                0.1
+License:                LGPL
+License-File:           LICENSE
+Author:                 Trevor Elliott <trevor@geekgateway.com>
+Maintainer:             trevor@geekgateway.com
+Build-depends:          base, mtl, parsec >= 2.0
+Exposed-Modules:        Network.IRC
+ghc-options:            -fglasgow-exts
