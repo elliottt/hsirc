@@ -23,10 +23,11 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 |
 | A library for parsing IRC messages.
 
-> module Network.IRC
+> module Network.IRC.Parser
 >   ( Parameter
 >   , ServerName
 >   , UserName
+>   , RealName
 >   , Command
 >   , Prefix(Server, NickName)
 >   , Message(Message)
@@ -56,6 +57,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 > type Parameter  = String
 > type ServerName = String
 > type UserName   = String
+> type RealName   = String
 
 | A prefix is the beginning of the message
 
@@ -100,7 +102,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 >         <|> do x <- digit
 >                y <- digit
 >                z <- digit
->                return $ translateReply [x,y,z]
+>                return [x,y,z]
 
 > parameter :: Parser Parameter
 > parameter  =  (char ':' >> takeUntil "\r\n")

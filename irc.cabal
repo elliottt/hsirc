@@ -7,4 +7,6 @@ Maintainer:             trevor@geekgateway.com
 Extra-source-files:     COPYING.LESSER
 Build-depends:          base, mtl, parsec >= 2.0
 Exposed-Modules:        Network.IRC
+                        Network.IRC.Parser
+                        Network.IRC.Client
 ghc-options:            -fglasgow-exts
