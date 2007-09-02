@@ -1,7 +1,7 @@
 module Network.IRC
   ( module Network.IRC.Parser
-  , module Network.IRC.Client
+  , module Network.IRC.Monad
   ) where
 
 import Network.IRC.Parser
-import Network.IRC.Client
+import Network.IRC.Monad

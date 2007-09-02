@@ -134,7 +134,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 >   ++ maybe "" (\s' -> "@" ++ s') s
 
 > formatArgs :: [Parameter] -> String
-> formatArgs  = unwords . formatArgs'
+> formatArgs  = unwords . formatArgs' . filter ((>0) . length)
 
 > formatArgs' :: [Parameter] -> [String]
 > formatArgs' []                    = []
