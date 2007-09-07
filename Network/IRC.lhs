@@ -23,7 +23,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 |
 | A library for parsing IRC messages.
 
-> module Network.IRC.Parser
+> module Network.IRC
 >   ( Parameter
 >   , ServerName
 >   , UserName
