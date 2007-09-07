@@ -80,7 +80,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 > tokenize p = p >>= \x -> spaces >> return x
 
 > spaces :: Parser ()
-> spaces  = skipMany1 (char ' ')
+> spaces  = skipMany1 (oneOf " \t\b")
 
 > prefix :: Parser Prefix
 > prefix  = char ':' >> (try nickname <|> server)
