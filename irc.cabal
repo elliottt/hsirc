@@ -1,10 +1,11 @@
 Name:                   irc
+Synopsis:               A small library for parsing IRC messages
 Version:                0.1
+Category:               Data
 License:                LGPL
 License-File:           COPYING
 Author:                 Trevor Elliott
 Maintainer:             trevor@geekgateway.com
 Extra-source-files:     COPYING.LESSER
-Build-depends:          base, mtl, parsec >= 2.0
+Build-depends:          base, parsec >= 2.0
 Exposed-Modules:        Network.IRC
-Extensions:             GeneralizedNewtypeDeriving
