@@ -8,4 +8,6 @@ Author:                 Trevor Elliott
 Maintainer:             trevor@geekgateway.com
 Extra-source-files:     COPYING.LESSER
 Build-depends:          base, parsec >= 2.0
-Exposed-Modules:        Network.IRC
+Exposed-Modules:        Network.IRC,
+                        Network.IRC.Datatypes,
+                        Network.IRC.Parser

@@ -12,19 +12,21 @@
 
 -- You should have received a copy of the GNU Lesser General Public License
 -- along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+-- | Parsec parsers and a general parsing interface for IRC messages
 module Network.IRC.Parser (
     -- * Parsing and Formatting Functions
     parseMessage   -- :: String -> Maybe Message
 
     -- * Parsec Combinators for Parsing IRC messages
-  , prefix    -- :: CharParser st Prefix
-  , server    -- :: CharParser st Prefix
-  , nickname  -- :: CharParser st Prefix
-  , command   -- :: CharParser st Command
-  , parameter -- :: CharParser st Parameter
-  , message   -- :: CharParser st Message
-  , crlf      -- :: CharParser st ()
-  , spaces    -- :: CharParser st ()
+  , prefix          -- :: CharParser st Prefix
+  , serverPrefix    -- :: CharParser st Prefix
+  , nicknamePrefix  -- :: CharParser st Prefix
+  , command         -- :: CharParser st Command
+  , parameter       -- :: CharParser st Parameter
+  , message         -- :: CharParser st Message
+  , crlf            -- :: CharParser st ()
+  , spaces          -- :: CharParser st ()
 
     -- * Other Parser Combinators
   , maybeP    -- :: GenParser tok st a -> GenParser tok st (Maybe a)
@@ -61,15 +63,15 @@ spaces  = skipMany1 (oneOf " \t\b")
 
 -- | Parse a Prefix
 prefix :: CharParser st Prefix
-prefix  = char ':' >> (try nickname <|> server)
+prefix  = char ':' >> (try nicknamePrefix <|> serverPrefix)
 
 -- | Parse a Server prefix
-server :: CharParser st Prefix
-server  = takeUntil " " >>= return . Server
+serverPrefix :: CharParser st Prefix
+serverPrefix  = takeUntil " " >>= return . Server
 
 -- | Parse a NickName prefix
-nickname :: CharParser st Prefix
-nickname  = do
+nicknamePrefix :: CharParser st Prefix
+nicknamePrefix  = do
   n <- takeUntil " .!@"
   p <- option False (char '.' >> return True)
   when p (fail "")

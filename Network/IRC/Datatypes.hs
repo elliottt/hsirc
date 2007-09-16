@@ -12,6 +12,8 @@
 
 -- You should have received a copy of the GNU Lesser General Public License
 -- along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+-- | Datatypes for representing IRC messages, as well as formatting them.
 module Network.IRC.Datatypes (
     -- * Type Synonyms
     Parameter
@@ -20,15 +22,24 @@ module Network.IRC.Datatypes (
   , RealName
   , Command
 
+    -- Type classes
+  , Prop(renderProp)
+
     -- * IRC Datatypes
   , Prefix(Server, NickName)
   , Message(Message)
+  , Mode(Add, Remove)
+  , UserProp(..)
+  , ChanProp(..)
 
     -- * Formatting functions
-  , render         -- :: Message -> String
-  , translateReply -- :: String -> String
+  , render         -- ::             Message -> String
+  , renderMode     -- :: (Prop p) => Mode p -> String
+  , translateReply -- ::             String -> String
   ) where
 
+import Control.Arrow
+import Control.Monad
 import Data.Maybe
 
 type Command    = String
@@ -51,6 +62,76 @@ data Prefix
   | -- | Nickname Prefix
     NickName String (Maybe UserName) (Maybe ServerName)
     deriving (Show)
+
+-- | IRC Modes
+data Mode p where
+  Add    :: (Prop p) => [p] -> Mode p
+  Remove :: (Prop p) => [p] -> Mode p
+
+instance Show p => Show (Mode p) where
+  show (Add    ps) = "Add "    ++ show ps
+  show (Remove ps) = "Remove " ++ show ps
+
+-- Render a mode string
+renderMode :: (Prop p) => Mode p -> String
+renderMode (Add    ps) = "+" ++ (concat $ map renderProp ps)
+renderMode (Remove ps) = "-" ++ (concat $ map renderProp ps)
+
+-- | Property class
+class Prop a where
+  renderProp :: a -> String
+
+-- | User properties
+data UserProp
+  = UserOp
+  | Invisible
+  | ServerNotices
+  | Wallops
+  deriving (Show,Eq)
+
+instance Prop UserProp where
+  renderProp p = fromMaybe "" (p `lookup` userPropTable)
+
+userPropTable :: [(UserProp,String)]
+userPropTable  =
+  [ (UserOp,        "o")
+  , (Invisible,     "i")
+  , (ServerNotices, "s")
+  , (Wallops,       "w")
+  ]
+
+-- | Channel properties
+data ChanProp
+  = ChanOp
+  | Private
+  | Secret
+  | InviteOnly
+  | TopicOpOnly
+  | NoOutsideMessages
+  | Moderated
+  | UserLimit
+  | BanMask
+  | Speak
+  | Password
+  deriving (Show,Eq)
+
+instance Prop ChanProp where
+  renderProp p = fromMaybe "" (p `lookup` chanPropTable)
+
+chanPropTable :: [(ChanProp,String)]
+chanPropTable  =
+  [ (ChanOp,            "o")
+  , (Private,           "p")
+  , (Secret,            "s")
+  , (InviteOnly,        "i")
+  , (TopicOpOnly,       "t")
+  , (NoOutsideMessages, "n")
+  , (Moderated,         "m")
+  , (UserLimit,         "l")
+  , (BanMask,           "b")
+  , (Speak,             "v")
+  , (Password,          "k")
+  ]
 
 -- | Message rendering
 render :: Message -- ^ IRC Message
