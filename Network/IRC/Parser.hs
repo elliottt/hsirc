@@ -38,7 +38,7 @@ import Control.Monad
 import Data.Maybe
 import Text.ParserCombinators.Parsec hiding (spaces)
 
-import Network.IRC.Types
+import Network.IRC.Datatypes
 
 -- | Parse a String into a Message.
 parseMessage :: String        -- ^ Message string
@@ -72,11 +72,11 @@ serverPrefix  = takeUntil " " >>= return . Server
 -- | Parse a NickName prefix
 nicknamePrefix :: CharParser st Prefix
 nicknamePrefix  = do
-  n <- takeUntil " .!@\r\n"
+  n <- takeUntil " .!@"
   p <- option False (char '.' >> return True)
   when p (fail "")
-  u <- maybeP $ char '!' >> takeUntil " @\r\n"
-  s <- maybeP $ char '@' >> takeUntil " \r\n"
+  u <- maybeP $ char '!' >> takeUntil " @"
+  s <- maybeP $ char '@' >> takeUntil " "
   return $ NickName n u s
 
 -- | Parse a command.  Either a string of capital letters, or 3 digits.
@@ -94,7 +94,7 @@ parameter  =  (char ':' >> takeUntil "\r\n")
 
 -- | Parse a cr lf
 crlf :: CharParser st ()
-crlf  = optional (char '\r') >> char '\n' >> return ()
+crlf  = string "\r\n" >> return ()
 
 -- | Parse a Message
 message :: CharParser st Message
@@ -102,5 +102,5 @@ message  = do
   p <- maybeP $ tokenize prefix
   c <- command
   ps <- many (spaces >> parameter)
-  crlf >> eof
+  crlf <|> eof
   return $ Message p c ps
