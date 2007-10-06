@@ -14,7 +14,7 @@
 -- along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 -- | Datatypes for representing IRC messages, as well as formatting them.
-module Network.IRC.Datatypes (
+module Network.IRC.Types (
     -- * Type Synonyms
     Parameter
   , ServerName
@@ -22,15 +22,15 @@ module Network.IRC.Datatypes (
   , RealName
   , Command
 
-    -- Type classes
+    -- * Properties
   , Prop(renderProp)
+  , Mode(Add, Remove)
+  , UserProp(..)
+  , ChanProp(..)
 
     -- * IRC Datatypes
   , Prefix(Server, NickName)
   , Message(Message)
-  , Mode(Add, Remove)
-  , UserProp(..)
-  , ChanProp(..)
 
     -- * Formatting functions
   , render         -- ::             Message -> String
@@ -38,8 +38,6 @@ module Network.IRC.Datatypes (
   , translateReply -- ::             String -> String
   ) where
 
-import Control.Arrow
-import Control.Monad
 import Data.Maybe
 
 type Command    = String
@@ -53,7 +51,7 @@ type RealName   = String
 data Message
   = -- | IRC Message
     Message (Maybe Prefix) Command [Parameter]
-    deriving (Show)
+    deriving (Show,Read,Eq)
 
 -- | The optional beginning of an IRC messages
 data Prefix
@@ -61,7 +59,7 @@ data Prefix
     Server ServerName
   | -- | Nickname Prefix
     NickName String (Maybe UserName) (Maybe ServerName)
-    deriving (Show)
+    deriving (Show,Read,Eq)
 
 -- | IRC Modes
 data Mode p where
@@ -136,7 +134,7 @@ chanPropTable  =
 -- | Message rendering
 render :: Message -- ^ IRC Message
        -> String  -- ^ Rendered message
-render m@(Message p c args) =
+render (Message p c args) =
   (maybe "" (\p' -> formatPrefix p' ++ " ") p) ++ c ++ " "
   ++ formatArgs args
   
