@@ -22,20 +22,13 @@ module Network.IRC.Types (
   , RealName
   , Command
 
-    -- * Properties
-  , Prop(renderProp)
-  , Mode(Add, Remove)
-  , UserProp(..)
-  , ChanProp(..)
-
     -- * IRC Datatypes
   , Prefix(Server, NickName)
   , Message(Message)
 
     -- * Formatting functions
-  , render         -- ::             Message -> String
-  , renderMode     -- :: (Prop p) => Mode p -> String
-  , translateReply -- ::             String -> String
+  , render         -- :: Message -> String
+  , translateReply -- :: String -> String
   ) where
 
 import Data.Maybe
@@ -60,76 +53,6 @@ data Prefix
   | -- | Nickname Prefix
     NickName String (Maybe UserName) (Maybe ServerName)
     deriving (Show,Read,Eq)
-
--- | IRC Modes
-data Mode p where
-  Add    :: (Prop p) => [p] -> Mode p
-  Remove :: (Prop p) => [p] -> Mode p
-
-instance Show p => Show (Mode p) where
-  show (Add    ps) = "Add "    ++ show ps
-  show (Remove ps) = "Remove " ++ show ps
-
--- Render a mode string
-renderMode :: (Prop p) => Mode p -> String
-renderMode (Add    ps) = "+" ++ (concat $ map renderProp ps)
-renderMode (Remove ps) = "-" ++ (concat $ map renderProp ps)
-
--- | Property class
-class Prop a where
-  renderProp :: a -> String
-
--- | User properties
-data UserProp
-  = UserOp
-  | Invisible
-  | ServerNotices
-  | Wallops
-  deriving (Show,Eq)
-
-instance Prop UserProp where
-  renderProp p = fromMaybe "" (p `lookup` userPropTable)
-
-userPropTable :: [(UserProp,String)]
-userPropTable  =
-  [ (UserOp,        "o")
-  , (Invisible,     "i")
-  , (ServerNotices, "s")
-  , (Wallops,       "w")
-  ]
-
--- | Channel properties
-data ChanProp
-  = ChanOp
-  | Private
-  | Secret
-  | InviteOnly
-  | TopicOpOnly
-  | NoOutsideMessages
-  | Moderated
-  | UserLimit
-  | BanMask
-  | Speak
-  | Password
-  deriving (Show,Eq)
-
-instance Prop ChanProp where
-  renderProp p = fromMaybe "" (p `lookup` chanPropTable)
-
-chanPropTable :: [(ChanProp,String)]
-chanPropTable  =
-  [ (ChanOp,            "o")
-  , (Private,           "p")
-  , (Secret,            "s")
-  , (InviteOnly,        "i")
-  , (TopicOpOnly,       "t")
-  , (NoOutsideMessages, "n")
-  , (Moderated,         "m")
-  , (UserLimit,         "l")
-  , (BanMask,           "b")
-  , (Speak,             "v")
-  , (Password,          "k")
-  ]
 
 -- | Message rendering
 render :: Message -- ^ IRC Message
