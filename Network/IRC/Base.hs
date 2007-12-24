@@ -31,11 +31,14 @@ module Network.IRC.Base (
   , showMessage, showPrefix, showCommand, showParameters
   , translateReply -- :: String -> String
   , replyTable     -- :: [(String,String)]
+
+    -- * Deprecated
+  , render
   ) where
 
 import Data.Maybe
 
--- -----------------------------------------------------------------------------
+-- ---------------------------------------------------------
 -- Data Types
 
 type Parameter  = String
@@ -65,13 +68,17 @@ data Prefix
     deriving (Show,Read,Eq)
 
 
--- -----------------------------------------------------------------------------
+-- ---------------------------------------------------------
 -- Formatting
 
 
 -- | Encode a message to its string representation
 encode :: Message -> String
 encode m = showMessage m
+
+-- | This is the deprecated version of encode
+render :: Message -> String
+render  = encode
 
 showMessage :: Message -> String
 showMessage (Message p c ps) = showMaybe p ++ showCommand c ++ showParameters ps
@@ -86,9 +93,15 @@ showCommand :: Command -> String
 showCommand  = unCommand
 
 showParameters :: [Parameter] -> String
-showParameters [] = ""
-showParameters ps = " " ++ unwords ps
+showParameters [] = []
+showParameters ps = " " ++ (unwords $ showp ps)
+  where showp [] = []
+        showp p@(x:xs) | ' ' `elem` x = [':' : unwords p]
+                       | otherwise    = x : showp xs
 
+
+-- ---------------------------------------------------------
+-- Message Translation
 
 -- | Translate a reply into its text description.
 --   If no text is available, the argument is returned.

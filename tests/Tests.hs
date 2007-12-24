@@ -8,8 +8,7 @@ import Control.Applicative
 import Control.Monad
 import System.Random
 import Test.QuickCheck
-
-import Debug.Trace
+import Test.HUnit
 
 
 instance Applicative Gen where
@@ -110,8 +109,38 @@ instance Arbitrary Message where
 -- ---------------------------------------------------------
 -- Properties
 
+prop_ircId    :: Message -> Bool
 prop_ircId msg = (decode . (++ "\r\n") . encode $ msg) == Just msg
 
 
-main :: IO ()
-main  = quickCheck prop_ircId
+-- ---------------------------------------------------------
+-- Unit Tests
+
+tests :: Test
+tests  = TestList $ map TestCase
+  -- Initial colon encoding tests
+  [ encode (Message Nothing (Command "PRIVMSG") ["#foo", ":bar bas"]) @?=
+    "PRIVMSG #foo ::bar bas"
+  , encode (Message Nothing (Command "PRIVMSG") ["#foo", ":bar"]) @?=
+    "PRIVMSG #foo :bar"
+
+  -- Corrected case
+  , decode ":talon.nl.eu.SwiftIRC.net 332 foo #bar :\n" @?=
+    Just (Message (Just $ Server "talon.nl.eu.SwiftIRC.net")
+            (Command "332") ["foo","#bar",""])
+  ]
+
+
+-- ---------------------------------------------------------
+-- Test Running
+
+header :: String -> IO ()
+header s = putStrLn "" >> putStrLn s >> putStrLn (replicate 60 '*')
+
+main :: IO Counts
+main  = do
+  header "Checking irc encode/decode identity"
+  quickCheck prop_ircId
+
+  header "Checking individual test cases"
+  runTestTT tests
