@@ -12,13 +12,13 @@ module Network.IRC.Commands (
   , privmsg
   ) where
 
-import Network.IRC.Types
+import Network.IRC.Base
 
 type Channel    = String
 type Password   = String
 
-mkMessage           :: Command -> [Parameter] -> Message
-mkMessage cmd params = Message Nothing cmd params
+mkMessage           :: String -> [Parameter] -> Message
+mkMessage cmd params = Message Nothing (Command cmd) params
 
 
 

@@ -20,7 +20,7 @@
 --
 -- Maintainer  : trevor@geekgateway.com
 -- Stability   : experimental
--- Portability : non-portable (GADT's)
+-- Portability : non-portable
 --
 -- library for parsing IRC messages
 --
@@ -28,9 +28,13 @@ module Network.IRC (
     -- * Parsers
     module Network.IRC.Parser
 
-    -- * Types
-  , module Network.IRC.Types
+    -- * Base
+  , module Network.IRC.Base
+  
+    -- * Message API
+  , module Network.IRC.Commands
   ) where
 
 import Network.IRC.Parser
-import Network.IRC.Types
+import Network.IRC.Base
+import Network.IRC.Commands

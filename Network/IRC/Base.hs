@@ -14,30 +14,39 @@
 -- along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 -- | Datatypes for representing IRC messages, as well as formatting them.
-module Network.IRC.Types (
+module Network.IRC.Base (
     -- * Type Synonyms
     Parameter
   , ServerName
   , UserName
   , RealName
-  , Command
+  , Command(..)
 
     -- * IRC Datatypes
   , Prefix(Server, NickName)
   , Message(Message)
 
     -- * Formatting functions
-  , render         -- :: Message -> String
+  , encode         -- :: Message -> String
+  , showMessage, showPrefix, showCommand, showParameters
   , translateReply -- :: String -> String
+  , replyTable     -- :: [(String,String)]
   ) where
 
 import Data.Maybe
 
-type Command    = String
+-- -----------------------------------------------------------------------------
+-- Data Types
+
 type Parameter  = String
 type ServerName = String
 type UserName   = String
 type RealName   = String
+
+-- | Commands
+newtype Command = Command { unCommand :: String }
+  deriving (Read,Show,Eq)
+
 
 -- | IRC messages are parsed as:
 --   [ ':' prefix space ] command { space param } crlf
@@ -45,6 +54,7 @@ data Message
   = -- | IRC Message
     Message (Maybe Prefix) Command [Parameter]
     deriving (Show,Read,Eq)
+
 
 -- | The optional beginning of an IRC messages
 data Prefix
@@ -54,33 +64,38 @@ data Prefix
     NickName String (Maybe UserName) (Maybe ServerName)
     deriving (Show,Read,Eq)
 
--- | Message rendering
-render :: Message -- ^ IRC Message
-       -> String  -- ^ Rendered message
-render (Message p c args) =
-  (maybe "" (\p' -> formatPrefix p' ++ " ") p) ++ c ++ " "
-  ++ formatArgs args
-  
-formatPrefix :: Prefix -> String
-formatPrefix (Server n)       = ":" ++ n
-formatPrefix (NickName n u s) = ":" ++ n
-                                    ++ maybe "" (\u' -> "!" ++ u') u
-                                    ++ maybe "" (\s' -> "@" ++ s') s
 
--- Format a parameter string
-formatArgs :: [Parameter] -> String
-formatArgs  = unwords . formatArgs' . filter ((>0) . length)
+-- -----------------------------------------------------------------------------
+-- Formatting
 
-formatArgs' :: [Parameter] -> [String]
-formatArgs' []                    = []
-formatArgs' l@(p:ps) | elem ' ' p = [":" ++ unwords l]
-                     | otherwise  = p : formatArgs' ps
 
--- | Translate a reply into the text version of the reply.
---   If no text version is available, the argument is returned.
+-- | Encode a message to its string representation
+encode :: Message -> String
+encode m = showMessage m
+
+showMessage :: Message -> String
+showMessage (Message p c ps) = showMaybe p ++ showCommand c ++ showParameters ps
+  where showMaybe = maybe "" ((++ " ") . (':':) . showPrefix)
+
+showPrefix :: Prefix -> String
+showPrefix (Server s)       = s
+showPrefix (NickName n u h) = n ++ showMaybe '!' u ++ showMaybe '@' h
+  where showMaybe c e = maybe "" (c:) e
+
+showCommand :: Command -> String
+showCommand  = unCommand
+
+showParameters :: [Parameter] -> String
+showParameters [] = ""
+showParameters ps = " " ++ unwords ps
+
+
+-- | Translate a reply into its text description.
+--   If no text is available, the argument is returned.
 translateReply :: Command -- ^ Reply
                -> String  -- ^ Text translation
-translateReply r = fromMaybe r $ lookup r replyTable
+translateReply (Command r) = fromMaybe r $ lookup r replyTable
+
 
 -- One big lookup table of codes and errors
 replyTable :: [(String,String)]

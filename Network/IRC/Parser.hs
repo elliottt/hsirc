@@ -16,42 +16,37 @@
 -- | Parsec parsers and a general parsing interface for IRC messages
 module Network.IRC.Parser (
     -- * Parsing and Formatting Functions
-    parseMessage   -- :: String -> Maybe Message
+    decode -- :: String -> Maybe Message
 
     -- * Parsec Combinators for Parsing IRC messages
-  , prefix          -- :: CharParser st Prefix
-  , serverPrefix    -- :: CharParser st Prefix
-  , nicknamePrefix  -- :: CharParser st Prefix
-  , command         -- :: CharParser st Command
-  , parameter       -- :: CharParser st Parameter
-  , message         -- :: CharParser st Message
-  , crlf            -- :: CharParser st ()
-  , spaces          -- :: CharParser st ()
+  , prefix         -- :: CharParser st Prefix
+  , serverPrefix   -- :: CharParser st Prefix
+  , nicknamePrefix -- :: CharParser st Prefix
+  , command        -- :: CharParser st Command
+  , parameter      -- :: CharParser st Parameter
+  , message        -- :: CharParser st Message
+  , crlf           -- :: CharParser st ()
+  , spaces         -- :: CharParser st ()
 
     -- * Other Parser Combinators
-  , maybeP    -- :: GenParser tok st a -> GenParser tok st (Maybe a)
   , tokenize  -- :: CharParser st a -> CharParser st a
   , takeUntil -- :: String -> CharParser st String
   ) where
+
+import Network.IRC.Base
 
 import Control.Monad
 import Data.Maybe
 import Text.ParserCombinators.Parsec hiding (spaces)
 
-import Network.IRC.Types
-
 -- | Parse a String into a Message.
-parseMessage :: String        -- ^ Message string
-             -> Maybe Message -- ^ Parsed message
-parseMessage  = (either (const Nothing) Just) . (parse message "")
+decode :: String        -- ^ Message string
+       -> Maybe Message -- ^ Parsed message
+decode = (either (const Nothing) Just) . (parse message "")
 
 -- | Take all tokens until one character from a given string is found
 takeUntil :: String -> CharParser st String
-takeUntil  = many1 . noneOf
-
--- | Convert a parser into an optional one that returns a Maybe
-maybeP  :: GenParser tok st a -> GenParser tok st (Maybe a)
-maybeP p = option Nothing (liftM Just p)
+takeUntil s = anyChar `manyTill` (lookAhead (oneOf s))
 
 -- | Convert a parser that consumes all space after it
 tokenize  :: CharParser st a -> CharParser st a
@@ -75,17 +70,17 @@ nicknamePrefix  = do
   n <- takeUntil " .!@\r\n"
   p <- option False (char '.' >> return True)
   when p (fail "")
-  u <- maybeP $ char '!' >> takeUntil " @\r\n"
-  s <- maybeP $ char '@' >> takeUntil " \r\n"
+  u <- optionMaybe $ char '!' >> takeUntil " @\r\n"
+  s <- optionMaybe $ char '@' >> takeUntil " \r\n"
   return $ NickName n u s
 
 -- | Parse a command.  Either a string of capital letters, or 3 digits.
 command :: CharParser st Command
-command  = many1 upper
+command  = (Command `fmap` many1 upper)
         <|> do x <- digit
                y <- digit
                z <- digit
-               return [x,y,z]
+               return $ Command [x,y,z]
 
 -- | Parse a command parameter.
 parameter :: CharParser st Parameter
@@ -99,7 +94,7 @@ crlf  = optional (char '\r') >> char '\n' >> return ()
 -- | Parse a Message
 message :: CharParser st Message
 message  = do
-  p <- maybeP $ tokenize prefix
+  p <- optionMaybe $ tokenize prefix
   c <- command
   ps <- many (spaces >> parameter)
   crlf >> eof
