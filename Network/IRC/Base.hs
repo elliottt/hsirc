@@ -20,7 +20,7 @@ module Network.IRC.Base (
   , ServerName
   , UserName
   , RealName
-  , Command(..)
+  , Command
 
     -- * IRC Datatypes
   , Prefix(Server, NickName)
@@ -28,7 +28,7 @@ module Network.IRC.Base (
 
     -- * Formatting functions
   , encode         -- :: Message -> String
-  , showMessage, showPrefix, showCommand, showParameters
+  , showMessage, showPrefix, showParameters
   , translateReply -- :: String -> String
   , replyTable     -- :: [(String,String)]
 
@@ -45,10 +45,7 @@ type Parameter  = String
 type ServerName = String
 type UserName   = String
 type RealName   = String
-
--- | Commands
-newtype Command = Command { unCommand :: String }
-  deriving (Read,Show,Eq)
+type Command    = String
 
 
 -- | IRC messages are parsed as:
@@ -81,16 +78,13 @@ render :: Message -> String
 render  = encode
 
 showMessage :: Message -> String
-showMessage (Message p c ps) = showMaybe p ++ showCommand c ++ showParameters ps
+showMessage (Message p c ps) = showMaybe p ++ c ++ showParameters ps
   where showMaybe = maybe "" ((++ " ") . (':':) . showPrefix)
 
 showPrefix :: Prefix -> String
 showPrefix (Server s)       = s
 showPrefix (NickName n u h) = n ++ showMaybe '!' u ++ showMaybe '@' h
   where showMaybe c e = maybe "" (c:) e
-
-showCommand :: Command -> String
-showCommand  = unCommand
 
 showParameters :: [Parameter] -> String
 showParameters [] = []
@@ -107,7 +101,7 @@ showParameters ps = " " ++ (unwords $ showp ps)
 --   If no text is available, the argument is returned.
 translateReply :: Command -- ^ Reply
                -> String  -- ^ Text translation
-translateReply (Command r) = fromMaybe r $ lookup r replyTable
+translateReply r = fromMaybe r $ lookup r replyTable
 
 
 -- One big lookup table of codes and errors

@@ -7,7 +7,9 @@ license:            LGPL
 license-file:       COPYING
 author:             Trevor Elliott
 maintainer:         trevor@geekgateway.com
-extra-source-files: COPYING.LESSER
+extra-source-files: COPYING.LESSER,
+                    tests/Makefile,
+                    tests/Tests.hs
 cabal-version:      >= 1.2.0
 
 library

@@ -18,7 +18,7 @@ type Channel    = String
 type Password   = String
 
 mkMessage           :: String -> [Parameter] -> Message
-mkMessage cmd params = Message Nothing (Command cmd) params
+mkMessage cmd params = Message Nothing cmd params
 
 
 

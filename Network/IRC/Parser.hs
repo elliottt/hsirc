@@ -31,6 +31,9 @@ module Network.IRC.Parser (
     -- * Other Parser Combinators
   , tokenize  -- :: CharParser st a -> CharParser st a
   , takeUntil -- :: String -> CharParser st String
+
+    -- * Deprecated Functions
+  , parseMessage
   ) where
 
 import Network.IRC.Base
@@ -43,6 +46,10 @@ import Text.ParserCombinators.Parsec hiding (spaces)
 decode :: String        -- ^ Message string
        -> Maybe Message -- ^ Parsed message
 decode = (either (const Nothing) Just) . (parse message "")
+
+-- | The deprecated version of decode
+parseMessage :: String -> Maybe Message
+parseMessage  = decode
 
 -- | Take all tokens until one character from a given string is found
 takeUntil :: String -> CharParser st String
@@ -76,11 +83,11 @@ nicknamePrefix  = do
 
 -- | Parse a command.  Either a string of capital letters, or 3 digits.
 command :: CharParser st Command
-command  = (Command `fmap` many1 upper)
+command  = (many1 upper)
         <|> do x <- digit
                y <- digit
                z <- digit
-               return $ Command [x,y,z]
+               return [x,y,z]
 
 -- | Parse a command parameter.
 parameter :: CharParser st Parameter

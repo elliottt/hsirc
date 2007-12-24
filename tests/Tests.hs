@@ -80,6 +80,16 @@ host  = frequency
 -- ---------------------------------------------------------
 -- IRC Types
 
+newtype Cmd = Cmd { unCmd :: String }
+  deriving (Read,Show,Eq)
+
+instance Arbitrary Cmd where
+  arbitrary   =
+      let c = (replyTable !!) <$> choose (0, length replyTable - 1)
+       in Cmd . fst <$> c
+  coarbitrary = undefined
+
+
 instance Arbitrary Prefix where
   arbitrary   = oneof
       [ do name <- unIdentifier <$> arbitrary
@@ -92,17 +102,11 @@ instance Arbitrary Prefix where
   coarbitrary = undefined
 
 
-instance Arbitrary Command where
-  arbitrary   =
-      let c = (replyTable !!) <$> choose (0, length replyTable - 1)
-       in Command . fst <$> c
-  coarbitrary = undefined
-
-
 instance Arbitrary Message where
   arbitrary   =
       let params = map unIdentifier <$> sized vector
-       in Message <$> arbitrary <*> arbitrary <*> params
+          cmd    = unCmd <$> arbitrary
+       in Message <$> arbitrary <*> cmd <*> params
   coarbitrary = undefined
 
 
@@ -119,15 +123,15 @@ prop_ircId msg = (decode . (++ "\r\n") . encode $ msg) == Just msg
 tests :: Test
 tests  = TestList $ map TestCase
   -- Initial colon encoding tests
-  [ encode (Message Nothing (Command "PRIVMSG") ["#foo", ":bar bas"]) @?=
+  [ encode (Message Nothing "PRIVMSG" ["#foo", ":bar bas"]) @?=
     "PRIVMSG #foo ::bar bas"
-  , encode (Message Nothing (Command "PRIVMSG") ["#foo", ":bar"]) @?=
+  , encode (Message Nothing "PRIVMSG" ["#foo", ":bar"]) @?=
     "PRIVMSG #foo :bar"
 
   -- Corrected case
   , decode ":talon.nl.eu.SwiftIRC.net 332 foo #bar :\n" @?=
     Just (Message (Just $ Server "talon.nl.eu.SwiftIRC.net")
-            (Command "332") ["foo","#bar",""])
+            "332" ["foo","#bar",""])
   ]
 
 
