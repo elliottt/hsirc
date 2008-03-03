@@ -10,6 +10,7 @@ maintainer:         trevor@geekgateway.com
 extra-source-files: tests/Makefile,
                     tests/Tests.hs
 cabal-version:      >= 1.2.0
+build-type:         Simple
 
 library
   ghc-options:     -Wall
