@@ -87,12 +87,12 @@ showPrefix (NickName n u h) = n ++ showMaybe '!' u ++ showMaybe '@' h
   where showMaybe c e = maybe "" (c:) e
 
 showParameters :: [Parameter] -> String
-showParameters [] = []
-showParameters ps = " " ++ (unwords $ showp ps)
-  where showp [] = []
-        showp p@(x:xs) | ' ' `elem` x = [':' : unwords p]
-                       | otherwise    = x : showp xs
-
+showParameters []     = []
+showParameters params = " " ++ (unwords $ showp params)
+  where showp [p] | ' ' `elem` p || null p || head p == ':' = [':' : p]
+                  | otherwise = [p]
+        showp (p:ps) = p : showp ps
+        showp []     = []
 
 -- ---------------------------------------------------------
 -- Message Translation
