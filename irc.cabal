@@ -1,7 +1,7 @@
 name:               irc
 synopsis:           A small library for parsing IRC messages.
 description:        A set of combinators and types for parsing IRC messages.
-version:            0.4.2
+version:            0.4.3
 category:           Data
 license:            BSD3
 license-file:       LICENSE
@@ -15,7 +15,7 @@ build-type:         Simple
 
 library
   ghc-options:     -Wall
-  build-depends:   base, parsec >= 2.0
+  build-depends:   base, parsec >= 2.1.0.0
   exposed-Modules: Network.IRC,
                    Network.IRC.Base,
                    Network.IRC.Commands,
