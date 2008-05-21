@@ -23,8 +23,8 @@ module Network.IRC.Base (
   , Command
 
     -- * IRC Datatypes
-  , Prefix(Server, NickName)
-  , Message(Message)
+  , Prefix(..)
+  , Message(..)
 
     -- * Formatting functions
   , encode         -- :: Message -> String
@@ -50,10 +50,11 @@ type Command    = String
 
 -- | IRC messages are parsed as:
 --   [ ':' prefix space ] command { space param } crlf
-data Message
-  = -- | IRC Message
-    Message (Maybe Prefix) Command [Parameter]
-    deriving (Show,Read,Eq)
+data Message = Message 
+  { msg_prefix  :: Maybe Prefix
+  , msg_command :: Command
+  , msg_params  :: [Parameter]
+  } deriving (Show,Read,Eq)
 
 
 -- | The optional beginning of an IRC messages
