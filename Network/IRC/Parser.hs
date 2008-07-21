@@ -96,7 +96,9 @@ parameter  =  (char ':' >> takeUntil "\r\n")
 
 -- | Parse a cr lf
 crlf :: CharParser st ()
-crlf  = optional (char '\r') >> char '\n' >> return ()
+crlf  =  (char '\r' >> optional (char '\n'))
+     <|> (char '\n' >> return ()           )
+
 
 -- | Parse a Message
 message :: CharParser st Message
