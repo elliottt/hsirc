@@ -126,7 +126,7 @@ tests  = TestList $ map TestCase
   [ encode (Message Nothing "PRIVMSG" ["#foo", ":bar bas"]) @?=
     "PRIVMSG #foo ::bar bas"
   , encode (Message Nothing "PRIVMSG" ["#foo", ":bar"]) @?=
-    "PRIVMSG #foo :bar"
+    "PRIVMSG #foo ::bar"
 
   -- Corrected case
   , decode ":talon.nl.eu.SwiftIRC.net 332 foo #bar :\n" @?=
