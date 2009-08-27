@@ -9,7 +9,7 @@ author:             Trevor Elliott
 maintainer:         trevor@geekgateway.com
 extra-source-files: tests/Makefile,
                     tests/Tests.hs
-cabal-version:      >= 1.2.0
+cabal-version:      >= 1.6.0
 build-type:         Simple
 
 source-repository head
