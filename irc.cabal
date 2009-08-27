@@ -18,7 +18,7 @@ source-repository head
 
 library
   ghc-options:     -Wall
-  build-depends:   base, parsec >= 2.1.0.0
+  build-depends:   base == 4.*, parsec == 2.1.*
   exposed-Modules: Network.IRC,
                    Network.IRC.Base,
                    Network.IRC.Commands,
