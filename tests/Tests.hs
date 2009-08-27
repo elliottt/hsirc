@@ -24,7 +24,6 @@ newtype Identifier = Identifier { unIdentifier :: String }
   deriving (Read,Show,Eq)
 
 instance Arbitrary Identifier where
-  coarbitrary = undefined
   arbitrary   = do
       l  <- letter
       ls <- sized $ \n -> loop n
@@ -39,7 +38,6 @@ instance Arbitrary Identifier where
 newtype Host = Host { unHost :: String }
 
 instance Arbitrary Host where
-  coarbitrary = undefined
   arbitrary   = do
       l  <- identifier
       ls <- sized $ \n -> loop n
@@ -87,7 +85,6 @@ instance Arbitrary Cmd where
   arbitrary   =
       let c = (replyTable !!) <$> choose (0, length replyTable - 1)
        in Cmd . fst <$> c
-  coarbitrary = undefined
 
 
 instance Arbitrary Prefix where
@@ -99,7 +96,6 @@ instance Arbitrary Prefix where
       , do host <- unHost <$> arbitrary
            return $ Server host
       ]
-  coarbitrary = undefined
 
 
 instance Arbitrary Message where
@@ -107,7 +103,6 @@ instance Arbitrary Message where
       let params = map unIdentifier <$> sized vector
           cmd    = unCmd <$> arbitrary
        in Message <$> arbitrary <*> cmd <*> params
-  coarbitrary = undefined
 
 
 -- ---------------------------------------------------------

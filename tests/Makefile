@@ -2,7 +2,7 @@ ODIR   = .ghc
 TARGET = Tests
 
 all : $(ODIR)
-	ghc --make -odir=$(ODIR) -hidir=$(ODIR) $(TARGET)
+	ghc --make -odir=$(ODIR) -hidir=$(ODIR) $(TARGET) -i../
 	./$(TARGET)
 
 $(ODIR) :
