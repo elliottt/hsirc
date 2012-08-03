@@ -10,12 +10,14 @@ module Network.IRC.Commands (
   , part
   , quit
   , privmsg
+  , kick
   ) where
 
 import Network.IRC.Base
 
 type Channel    = String
 type Password   = String
+type Reason     = String
 
 mkMessage           :: String -> [Parameter] -> Message
 mkMessage cmd params = Message Nothing cmd params
@@ -31,6 +33,10 @@ user u h s r = mkMessage "USER" [u,h,s,r]
 
 joinChan  :: Channel -> Message
 joinChan c = mkMessage "JOIN" [c]
+
+kick :: Channel -> UserName -> Maybe Reason -> Message
+kick c u (Just r) = mkMessage "KICK" [c,u,r]
+kick c u Nothing  = mkMessage "KICK" [c,u]
 
 part  :: Channel -> Message
 part c = mkMessage "PART" [c]
