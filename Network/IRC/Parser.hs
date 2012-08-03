@@ -24,7 +24,6 @@ module Network.IRC.Parser (
 import Network.IRC.Base
 
 import Control.Monad
-import Data.Maybe
 import Text.ParserCombinators.Parsec hiding (spaces)
 
 -- | Parse a String into a Message.
