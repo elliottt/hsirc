@@ -47,3 +47,6 @@ quit Nothing  = mkMessage "QUIT" []
 
 privmsg    :: String -> String -> Message
 privmsg c m = mkMessage "PRIVMSG" [c,m]
+
+pong  :: ServerName -> Message
+pong s = mkMessage "PONG" [s]
