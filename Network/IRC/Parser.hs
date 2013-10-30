@@ -13,82 +13,132 @@ module Network.IRC.Parser (
   , crlf           -- :: CharParser st ()
   , spaces         -- :: CharParser st ()
 
-    -- * Other Parser Combinators
-  , tokenize  -- :: CharParser st a -> CharParser st a
-  , takeUntil -- :: String -> CharParser st String
-
     -- * Deprecated Functions
   , parseMessage
   ) where
 
 import Network.IRC.Base
 
+import Data.Char
+import Data.Word
+import Data.ByteString hiding (elem, map)
+
 import Control.Monad
-import Text.ParserCombinators.Parsec hiding (spaces)
+import Control.Applicative
+import Data.Attoparsec.ByteString
+
+asciiToWord8 :: Char -> Word8
+asciiToWord8 = fromIntegral . ord
+
+wSpace :: Word8
+wSpace = asciiToWord8 ' '
+
+wTab :: Word8
+wTab = asciiToWord8 '\t'
+
+wBell :: Word8
+wBell = asciiToWord8 '\b'
+
+wDot :: Word8
+wDot = asciiToWord8 '.'
+
+wExcl :: Word8
+wExcl = asciiToWord8 '!'
+
+wAt :: Word8
+wAt = asciiToWord8 '@'
+
+wCR :: Word8
+wCR = asciiToWord8 '\r'
+
+wLF :: Word8
+wLF = asciiToWord8 '\n'
+
+wColon :: Word8
+wColon = asciiToWord8 ':'
 
 -- | Parse a String into a Message.
-decode :: String        -- ^ Message string
+decode :: ByteString        -- ^ Message string
        -> Maybe Message -- ^ Parsed message
-decode = (either (const Nothing) Just) . (parse message "")
+decode str = case parseOnly message str of
+  Left _ -> Nothing
+  Right r -> Just r
 
 -- | The deprecated version of decode
-parseMessage :: String -> Maybe Message
+parseMessage :: ByteString -> Maybe Message
 parseMessage  = decode
 
--- | Take all tokens until one character from a given string is found
-takeUntil :: String -> CharParser st String
-takeUntil s = anyChar `manyTill` (lookAhead (oneOf s))
-
 -- | Convert a parser that consumes all space after it
-tokenize  :: CharParser st a -> CharParser st a
+tokenize  :: Parser a -> Parser a
 tokenize p = p >>= \x -> spaces >> return x
 
 -- | Consume only spaces tabs or the bell character
-spaces :: CharParser st ()
-spaces  = skipMany1 (oneOf " \t\b")
+spaces :: Parser ()
+spaces  = skip (\w -> w == wSpace ||
+                      w == wTab ||
+                      w == wBell)
 
 -- | Parse a Prefix
-prefix :: CharParser st Prefix
-prefix  = char ':' >> (try nicknamePrefix <|> serverPrefix)
+prefix :: Parser Prefix
+prefix  = word8 wColon >> (try nicknamePrefix <|> serverPrefix)
 
 -- | Parse a Server prefix
-serverPrefix :: CharParser st Prefix
-serverPrefix  = takeUntil " " >>= return . Server
+serverPrefix :: Parser Prefix
+serverPrefix  = takeTill (== wSpace) >>= return . Server
+
+optionMaybe :: Parser a -> Parser (Maybe a)
+optionMaybe p = option Nothing (Just <$> p)
 
 -- | Parse a NickName prefix
-nicknamePrefix :: CharParser st Prefix
+nicknamePrefix :: Parser Prefix
 nicknamePrefix  = do
-  n <- takeUntil " .!@\r\n"
-  p <- option False (char '.' >> return True)
+  n <- takeTill (inClass " .!@\r\n")
+  p <- option False (word8 wDot >> return True)
   when p (fail "")
-  u <- optionMaybe $ char '!' >> takeUntil " @\r\n"
-  s <- optionMaybe $ char '@' >> takeUntil " \r\n"
+  u <- optionMaybe $ word8 wExcl >> takeTill (\w -> w == wSpace ||
+                                                  w == wAt ||
+                                                  w == wCR ||
+                                                  w == wLF)
+  s <- optionMaybe $ word8 wAt >> takeTill (\w -> w == wSpace ||
+                                                  w == wCR ||
+                                                  w == wLF)
   return $ NickName n u s
 
+
+isWordAsciiUpper :: Word8 -> Bool
+isWordAsciiUpper w = asciiToWord8 'A' <= w && w <= asciiToWord8 'Z'
+
+digit :: Parser Word8
+digit = satisfy (\w -> asciiToWord8 '0' <= w && w <= asciiToWord8 '9')
+
 -- | Parse a command.  Either a string of capital letters, or 3 digits.
-command :: CharParser st Command
-command  = (many1 upper)
+command :: Parser Command
+command  = (takeWhile1 isWordAsciiUpper)
         <|> do x <- digit
                y <- digit
                z <- digit
-               return [x,y,z]
+               return (pack [x,y,z])
 
 -- | Parse a command parameter.
-parameter :: CharParser st Parameter
-parameter  =  (char ':' >> takeUntil "\r\n")
-          <|> (takeUntil " \r\n")
+parameter :: Parser Parameter
+parameter  =  (word8 wColon >> takeTill (\w -> w == wCR ||
+                                               w == wLF))
+          <|> (takeTill (\w -> w == wSpace ||
+                               w == wCR ||
+                               w == wLF))
 
 -- | Parse a cr lf
-crlf :: CharParser st ()
-crlf  =  (char '\r' >> optional (char '\n'))
-     <|> (char '\n' >> return ()           )
+crlf :: Parser ()
+crlf = (word8 wCR >> optional (word8 wLF) >> return ())
+     <|> (word8 wLF >> return ())
 
 
 -- | Parse a Message
-message :: CharParser st Message
+message :: Parser Message
 message  = do
   p <- optionMaybe $ tokenize prefix
   c <- command
   ps <- many (spaces >> parameter)
-  crlf >> eof
+  _ <- optional crlf
+  endOfInput
   return $ Message p c ps
