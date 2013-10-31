@@ -63,7 +63,7 @@ data Prefix
 
 -- | Encode a message to its string representation
 encode :: Message -> ByteString
-encode m = showMessage m
+encode = showMessage
 
 -- | This is the deprecated version of encode
 render :: Message -> ByteString
@@ -72,7 +72,7 @@ render  = encode
 showMessage :: Message -> ByteString
 showMessage (Message p c ps) = showMaybe p `BS.append` c `BS.append` showParameters ps
   where showMaybe Nothing = BS.empty
-        showMaybe (Just prefix) = ":" `BS.append` showPrefix prefix `BS.append` " "
+        showMaybe (Just prefix) = BS.concat [":", showPrefix prefix, " "]
 
 bsConsAscii :: Char -> ByteString -> ByteString
 bsConsAscii c = BS.cons (fromIntegral . ord $ c)
@@ -82,15 +82,15 @@ asciiToWord8 = fromIntegral . ord
 
 showPrefix :: Prefix -> ByteString
 showPrefix (Server s)       = s
-showPrefix (NickName n u h) = n `BS.append` showMaybe '!' u `BS.append` showMaybe '@' h
+showPrefix (NickName n u h) = BS.concat [n, showMaybe '!' u, showMaybe '@' h]
   where showMaybe c e = maybe "" (bsConsAscii c) e
 
 showParameters :: [Parameter] -> ByteString
 showParameters []     = BS.empty
 showParameters params = BS.intercalate " " (BS.empty : showp params)
-  where showp [p] | (asciiToWord8 ' ') `BS.elem` p ||
-                    BS.null p ||
-                    BS.head p == (asciiToWord8 ':') = [bsConsAscii ':' p]
+  where showp [p] | asciiToWord8 ' ' `BS.elem` p
+                    || BS.null p
+                    || BS.head p == asciiToWord8 ':' = [bsConsAscii ':' p]
                   | otherwise = [p]
         showp (p:ps) = p : showp ps
         showp []     = []

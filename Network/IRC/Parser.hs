@@ -4,14 +4,14 @@ module Network.IRC.Parser (
     decode -- :: String -> Maybe Message
 
     -- * Parsec Combinators for Parsing IRC messages
-  , prefix         -- :: CharParser st Prefix
-  , serverPrefix   -- :: CharParser st Prefix
-  , nicknamePrefix -- :: CharParser st Prefix
-  , command        -- :: CharParser st Command
-  , parameter      -- :: CharParser st Parameter
-  , message        -- :: CharParser st Message
-  , crlf           -- :: CharParser st ()
-  , spaces         -- :: CharParser st ()
+  , prefix         -- :: Parser Prefix
+  , serverPrefix   -- :: Parser Prefix
+  , nicknamePrefix -- :: Parser Prefix
+  , command        -- :: Parser Command
+  , parameter      -- :: Parser Parameter
+  , message        -- :: Parser Message
+  , crlf           -- :: Parser ()
+  , spaces         -- :: Parser ()
 
     -- * Deprecated Functions
   , parseMessage
@@ -27,6 +27,7 @@ import Control.Monad
 import Control.Applicative
 import Data.Attoparsec.ByteString
 
+-- | Casts a character (assumed to be ASCII) to its corresponding byte.
 asciiToWord8 :: Char -> Word8
 asciiToWord8 = fromIntegral . ord
 
@@ -58,7 +59,7 @@ wColon :: Word8
 wColon = asciiToWord8 ':'
 
 -- | Parse a String into a Message.
-decode :: ByteString        -- ^ Message string
+decode :: ByteString    -- ^ Message string
        -> Maybe Message -- ^ Parsed message
 decode str = case parseOnly message str of
   Left _ -> Nothing
@@ -72,7 +73,7 @@ parseMessage  = decode
 tokenize  :: Parser a -> Parser a
 tokenize p = p >>= \x -> spaces >> return x
 
--- | Consume only spaces tabs or the bell character
+-- | Consume only spaces, tabs, or the bell character
 spaces :: Parser ()
 spaces  = skip (\w -> w == wSpace ||
                       w == wTab ||
@@ -84,8 +85,10 @@ prefix  = word8 wColon >> (try nicknamePrefix <|> serverPrefix)
 
 -- | Parse a Server prefix
 serverPrefix :: Parser Prefix
-serverPrefix  = takeTill (== wSpace) >>= return . Server
+serverPrefix  = Server <$> takeTill (== wSpace)
 
+-- | optionMaybe p tries to apply parser p. If p fails without consuming input,
+-- | it return Nothing, otherwise it returns Just the value returned by p.
 optionMaybe :: Parser a -> Parser (Maybe a)
 optionMaybe p = option Nothing (Just <$> p)
 
@@ -96,9 +99,9 @@ nicknamePrefix  = do
   p <- option False (word8 wDot >> return True)
   when p (fail "")
   u <- optionMaybe $ word8 wExcl >> takeTill (\w -> w == wSpace ||
-                                                  w == wAt ||
-                                                  w == wCR ||
-                                                  w == wLF)
+                                                    w == wAt ||
+                                                    w == wCR ||
+                                                    w == wLF)
   s <- optionMaybe $ word8 wAt >> takeTill (\w -> w == wSpace ||
                                                   w == wCR ||
                                                   w == wLF)
@@ -113,7 +116,7 @@ digit = satisfy (\w -> asciiToWord8 '0' <= w && w <= asciiToWord8 '9')
 
 -- | Parse a command.  Either a string of capital letters, or 3 digits.
 command :: Parser Command
-command  = (takeWhile1 isWordAsciiUpper)
+command  = takeWhile1 isWordAsciiUpper
         <|> do x <- digit
                y <- digit
                z <- digit
@@ -129,8 +132,8 @@ parameter  =  (word8 wColon >> takeTill (\w -> w == wCR ||
 
 -- | Parse a cr lf
 crlf :: Parser ()
-crlf = (word8 wCR >> optional (word8 wLF) >> return ())
-     <|> (word8 wLF >> return ())
+crlf =  void (word8 wCR >> optional (word8 wLF))
+    <|> void (word8 wLF)
 
 
 -- | Parse a Message
