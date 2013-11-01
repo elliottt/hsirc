@@ -13,6 +13,7 @@ module Network.IRC.Commands (
   , quit
   , privmsg
   , kick
+  , pong
   ) where
 
 import Data.ByteString
