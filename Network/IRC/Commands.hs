@@ -1,3 +1,5 @@
+{-# LANGUAGE OverloadedStrings #-}
+
 module Network.IRC.Commands (
     -- * Types
     Channel
@@ -11,15 +13,18 @@ module Network.IRC.Commands (
   , quit
   , privmsg
   , kick
+  , pong
   ) where
+
+import Data.ByteString
 
 import Network.IRC.Base
 
-type Channel    = String
-type Password   = String
-type Reason     = String
+type Channel    = ByteString
+type Password   = ByteString
+type Reason     = ByteString
 
-mkMessage           :: String -> [Parameter] -> Message
+mkMessage           :: ByteString -> [Parameter] -> Message
 mkMessage cmd params = Message Nothing cmd params
 
 
@@ -41,11 +46,11 @@ kick c u Nothing  = mkMessage "KICK" [c,u]
 part  :: Channel -> Message
 part c = mkMessage "PART" [c]
 
-quit :: Maybe String -> Message
+quit :: Maybe ByteString -> Message
 quit (Just m) = mkMessage "QUIT" [m]
 quit Nothing  = mkMessage "QUIT" []
 
-privmsg    :: String -> String -> Message
+privmsg    :: ByteString -> ByteString -> Message
 privmsg c m = mkMessage "PRIVMSG" [c,m]
 
 pong  :: ServerName -> Message

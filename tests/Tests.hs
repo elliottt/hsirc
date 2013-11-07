@@ -1,3 +1,4 @@
+{-# LANGUAGE OverloadedStrings #-}
 module Main where
 
 -- Friends
@@ -6,28 +7,25 @@ import Network.IRC
 -- Libraries
 import Control.Applicative
 import Control.Monad
+import Data.Char
+import Data.Word
+import Data.ByteString hiding (length, map, putStrLn, replicate)
 import System.Random
 import Test.QuickCheck
 import Test.HUnit
-
-
-instance Applicative Gen where
-  (<*>) = ap
-  pure  = return
-
 -- ---------------------------------------------------------
 -- Helpful Wrappers
 
 -- An identifier starts with a letter, and consists of interspersed numbers
 -- and special characters
-newtype Identifier = Identifier { unIdentifier :: String }
+newtype Identifier = Identifier { unIdentifier :: ByteString }
   deriving (Read,Show,Eq)
 
 instance Arbitrary Identifier where
   arbitrary   = do
       l  <- letter
       ls <- sized $ \n -> loop n
-      return $ Identifier (l:ls)
+      return $ Identifier (pack (l:ls))
     where loop n | n <= 0    = return []
                  | otherwise = do i  <- identifier
                                   is <- loop (n-1)
@@ -35,7 +33,7 @@ instance Arbitrary Identifier where
 
 -- A hostname is a string that starts and ends with an identifier, and has
 -- periods peppered in the middle.
-newtype Host = Host { unHost :: String }
+newtype Host = Host { unHost :: ByteString }
 
 instance Arbitrary Host where
   arbitrary   = do
@@ -43,42 +41,45 @@ instance Arbitrary Host where
       ls <- sized $ \n -> loop n
       js <- sized $ \n -> loop n
       e  <- identifier
-      return $ Host (l:ls ++ ('.':js) ++ [e])
+      return $ Host (pack (l:ls ++ (w8 '.':js) ++ [e]))
     where loop n | n <= 0    = return []
                  | otherwise = do i  <- host
                                   is <- loop (n-1)
                                   return (i:is)
 
 
-letter :: Gen Char
+w8 :: Char -> Word8
+w8 = fromIntegral . ord
+
+letter :: Gen Word8
 letter  = frequency
-  [ (50, choose ('a','z'))
-  , (50, choose ('A','Z'))
+  [ (50, choose (w8 'a', w8 'z'))
+  , (50, choose (w8 'A', w8 'Z'))
   ]
 
-digit :: Gen Char
-digit  = choose ('0','9')
+digit :: Gen Word8
+digit  = choose (w8 '0', w8 '9')
 
-special :: Gen Char
-special  = elements ['_','-']
+special :: Gen Word8
+special  = elements [w8 '_', w8 '-']
 
-identifier :: Gen Char
+identifier :: Gen Word8
 identifier  = frequency
   [ (50, letter)
   , (30, digit)
   , (10, special)
   ]
 
-host :: Gen Char
+host :: Gen Word8
 host  = frequency
   [ (90, identifier)
-  , (20, return '.')
+  , (20, return (w8 '.'))
   ]
 
 -- ---------------------------------------------------------
 -- IRC Types
 
-newtype Cmd = Cmd { unCmd :: String }
+newtype Cmd = Cmd { unCmd :: ByteString }
   deriving (Read,Show,Eq)
 
 instance Arbitrary Cmd where
@@ -109,7 +110,9 @@ instance Arbitrary Message where
 -- Properties
 
 prop_ircId    :: Message -> Bool
-prop_ircId msg = (decode . (++ "\r\n") . encode $ msg) == Just msg
+prop_ircId msg = (decode . appendCRLF . encode $ msg)
+                 == Just msg
+  where appendCRLF bs = append bs (pack [w8 '\r', w8 '\n'])
 
 
 -- ---------------------------------------------------------
