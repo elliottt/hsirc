@@ -1,5 +1,3 @@
-{-# LANGUAGE OverloadedStrings #-}
-
 -- | Datatypes for representing IRC messages, as well as formatting them.
 module Network.IRC.Base (
     -- * Type Synonyms
@@ -26,8 +24,9 @@ module Network.IRC.Base (
 import Data.Maybe
 import Data.Char
 import Data.Word
-import Data.ByteString
+import Data.ByteString (ByteString)
 import qualified Data.ByteString as BS
+import qualified Data.ByteString.Char8 as B8
 
 -- ---------------------------------------------------------
 -- Data Types
@@ -72,7 +71,9 @@ render  = encode
 showMessage :: Message -> ByteString
 showMessage (Message p c ps) = showMaybe p `BS.append` c `BS.append` showParameters ps
   where showMaybe Nothing = BS.empty
-        showMaybe (Just prefix) = BS.concat [":", showPrefix prefix, " "]
+        showMaybe (Just prefix) = BS.concat [ B8.pack ":"
+                                            , showPrefix prefix
+                                            , B8.pack " " ]
 
 bsConsAscii :: Char -> ByteString -> ByteString
 bsConsAscii c = BS.cons (fromIntegral . ord $ c)
@@ -83,11 +84,11 @@ asciiToWord8 = fromIntegral . ord
 showPrefix :: Prefix -> ByteString
 showPrefix (Server s)       = s
 showPrefix (NickName n u h) = BS.concat [n, showMaybe '!' u, showMaybe '@' h]
-  where showMaybe c e = maybe "" (bsConsAscii c) e
+  where showMaybe c e = maybe BS.empty (bsConsAscii c) e
 
 showParameters :: [Parameter] -> ByteString
 showParameters []     = BS.empty
-showParameters params = BS.intercalate " " (BS.empty : showp params)
+showParameters params = BS.intercalate (B8.pack " ") (BS.empty : showp params)
   where showp [p] | asciiToWord8 ' ' `BS.elem` p
                     || BS.null p
                     || BS.head p == asciiToWord8 ':' = [bsConsAscii ':' p]
@@ -107,7 +108,7 @@ translateReply r = fromMaybe r $ lookup r replyTable
 
 -- One big lookup table of codes and errors
 replyTable :: [(ByteString, ByteString)]
-replyTable  =
+replyTable  = map mkPair
   [ ("401","ERR_NOSUCHNICK")
   , ("402","ERR_NOSUCHSERVER")
   , ("403","ERR_NOSUCHCHANNEL")
@@ -227,3 +228,5 @@ replyTable  =
   , ("258","RPL_ADMINLOC2")
   , ("259","RPL_ADMINEMAIL")
   ]
+  where
+  mkPair (a,b) = (B8.pack a, B8.pack b)
