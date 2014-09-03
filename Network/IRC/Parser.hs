@@ -82,10 +82,12 @@ spaces  = skip (\w -> w == wSpace ||
 -- | Parse a Prefix
 prefix :: Parser Prefix
 prefix  = word8 wColon *> (try nicknamePrefix <|> serverPrefix)
+          <?> "prefix"
 
 -- | Parse a Server prefix
 serverPrefix :: Parser Prefix
 serverPrefix  = Server <$> takeTill (== wSpace)
+                <?> "serverPrefix"
 
 -- | optionMaybe p tries to apply parser p. If p fails without consuming input,
 -- | it return Nothing, otherwise it returns Just the value returned by p.
@@ -107,6 +109,7 @@ nicknamePrefix  = do
                             <*> optionMaybe (word8 wAt *> takeTill (\w -> w == wSpace ||
                                                                           w == wCR ||
                                                                           w == wLF))
+  <?> "nicknamePrefix"
 
 isWordAsciiUpper :: Word8 -> Bool
 isWordAsciiUpper w = asciiToWord8 'A' <= w && w <= asciiToWord8 'Z'
@@ -121,6 +124,7 @@ command  = takeWhile1 isWordAsciiUpper
                    digit
                <*> digit
                <*> digit
+        <?> "command"
     where digitsToByteString x y z = pack [x,y,z]
 
 -- | Parse a command parameter.
@@ -130,6 +134,7 @@ parameter  =  (word8 wColon *> takeTill (\w -> w == wCR ||
           <|> takeTill (\w -> w == wSpace ||
                               w == wCR ||
                               w == wLF)
+          <?> "parameter"
 
 -- | Parse a cr lf
 crlf :: Parser ()
@@ -144,3 +149,4 @@ message  = Message <$>
   <*> many (spaces *> parameter)
   <*  optional crlf
   <*  endOfInput
+  <?> "message"
