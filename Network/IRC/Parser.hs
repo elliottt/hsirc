@@ -21,9 +21,9 @@ import Network.IRC.Base
 
 import Data.Char
 import Data.Word
-import Data.ByteString hiding (elem, map)
+import Data.ByteString hiding (elem, map, empty)
 
-import Control.Monad
+import Control.Monad (void)
 import Control.Applicative
 import Data.Attoparsec.ByteString
 
@@ -71,7 +71,7 @@ parseMessage  = decode
 
 -- | Convert a parser that consumes all space after it
 tokenize  :: Parser a -> Parser a
-tokenize p = p >>= \x -> spaces >> return x
+tokenize p = p <* spaces
 
 -- | Consume only spaces, tabs, or the bell character
 spaces :: Parser ()
@@ -81,11 +81,13 @@ spaces  = skip (\w -> w == wSpace ||
 
 -- | Parse a Prefix
 prefix :: Parser Prefix
-prefix  = word8 wColon >> (try nicknamePrefix <|> serverPrefix)
+prefix  = word8 wColon *> (try nicknamePrefix <|> serverPrefix)
+          <?> "prefix"
 
 -- | Parse a Server prefix
 serverPrefix :: Parser Prefix
 serverPrefix  = Server <$> takeTill (== wSpace)
+                <?> "serverPrefix"
 
 -- | optionMaybe p tries to apply parser p. If p fails without consuming input,
 -- | it return Nothing, otherwise it returns Just the value returned by p.
@@ -96,17 +98,18 @@ optionMaybe p = option Nothing (Just <$> p)
 nicknamePrefix :: Parser Prefix
 nicknamePrefix  = do
   n <- takeTill (inClass " .!@\r\n")
-  p <- option False (word8 wDot >> return True)
-  when p (fail "")
-  u <- optionMaybe $ word8 wExcl >> takeTill (\w -> w == wSpace ||
-                                                    w == wAt ||
-                                                    w == wCR ||
-                                                    w == wLF)
-  s <- optionMaybe $ word8 wAt >> takeTill (\w -> w == wSpace ||
-                                                  w == wCR ||
-                                                  w == wLF)
-  return $ NickName n u s
-
+  p <- peekWord8
+  case p of
+    Just c | c == wDot -> empty
+    _                  -> NickName n <$>
+                                optionMaybe (word8 wExcl *> takeTill (\w -> w == wSpace ||
+                                                                            w == wAt ||
+                                                                            w == wCR ||
+                                                                            w == wLF))
+                            <*> optionMaybe (word8 wAt *> takeTill (\w -> w == wSpace ||
+                                                                          w == wCR ||
+                                                                          w == wLF))
+  <?> "nicknamePrefix"
 
 isWordAsciiUpper :: Word8 -> Bool
 isWordAsciiUpper w = asciiToWord8 'A' <= w && w <= asciiToWord8 'Z'
@@ -117,31 +120,33 @@ digit = satisfy (\w -> asciiToWord8 '0' <= w && w <= asciiToWord8 '9')
 -- | Parse a command.  Either a string of capital letters, or 3 digits.
 command :: Parser Command
 command  = takeWhile1 isWordAsciiUpper
-        <|> do x <- digit
-               y <- digit
-               z <- digit
-               return (pack [x,y,z])
+        <|> digitsToByteString <$>
+                   digit
+               <*> digit
+               <*> digit
+        <?> "command"
+    where digitsToByteString x y z = pack [x,y,z]
 
 -- | Parse a command parameter.
 parameter :: Parser Parameter
-parameter  =  (word8 wColon >> takeTill (\w -> w == wCR ||
+parameter  =  (word8 wColon *> takeTill (\w -> w == wCR ||
                                                w == wLF))
-          <|> (takeTill (\w -> w == wSpace ||
-                               w == wCR ||
-                               w == wLF))
+          <|> takeTill (\w -> w == wSpace ||
+                              w == wCR ||
+                              w == wLF)
+          <?> "parameter"
 
 -- | Parse a cr lf
 crlf :: Parser ()
-crlf =  void (word8 wCR >> optional (word8 wLF))
+crlf =  void (word8 wCR *> optional (word8 wLF))
     <|> void (word8 wLF)
-
 
 -- | Parse a Message
 message :: Parser Message
-message  = do
-  p <- optionMaybe $ tokenize prefix
-  c <- command
-  ps <- many (spaces >> parameter)
-  _ <- optional crlf
-  endOfInput
-  return $ Message p c ps
+message  = Message <$>
+      optionMaybe (tokenize prefix)
+  <*> command
+  <*> many (spaces *> parameter)
+  <*  optional crlf
+  <*  endOfInput
+  <?> "message"

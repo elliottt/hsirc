@@ -7,9 +7,7 @@ license:            BSD3
 license-file:       LICENSE
 author:             Trevor Elliott
 maintainer:         trevor@geekgateway.com
-extra-source-files: tests/Makefile,
-                    tests/Tests.hs
-cabal-version:      >= 1.6.0
+cabal-version:      >= 1.10
 build-type:         Simple
 
 source-repository head
@@ -18,8 +16,18 @@ source-repository head
 
 library
   ghc-options:     -Wall
+  default-language: Haskell2010
   build-depends:   base == 4.*, attoparsec, bytestring
   exposed-Modules: Network.IRC,
                    Network.IRC.Base,
                    Network.IRC.Commands,
                    Network.IRC.Parser
+
+test-suite Main
+  type:            exitcode-stdio-1.0
+  x-uses-tf:       true
+  build-depends:   base == 4.*, HUnit >= 1.2 && < 2, QuickCheck >= 2.4, test-framework >= 0.4.1, test-framework-quickcheck2, test-framework-hunit, bytestring, irc
+  ghc-options:     -Wall
+  hs-source-dirs:  tests
+  default-language: Haskell2010
+  main-is:         Main.hs
