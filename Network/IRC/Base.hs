@@ -23,7 +23,6 @@ module Network.IRC.Base (
 
 import Data.Maybe
 import Data.Char
-import Data.Word
 import Data.ByteString (ByteString)
 import qualified Data.ByteString as BS
 import qualified Data.ByteString.Char8 as B8
@@ -78,9 +77,6 @@ showMessage (Message p c ps) = showMaybe p `BS.append` c `BS.append` showParamet
 bsConsAscii :: Char -> ByteString -> ByteString
 bsConsAscii c = BS.cons (fromIntegral . ord $ c)
 
-asciiToWord8 :: Char -> Word8
-asciiToWord8 = fromIntegral . ord
-
 showPrefix :: Prefix -> ByteString
 showPrefix (Server s)       = s
 showPrefix (NickName n u h) = BS.concat [n, showMaybe '!' u, showMaybe '@' h]
@@ -89,10 +85,7 @@ showPrefix (NickName n u h) = BS.concat [n, showMaybe '!' u, showMaybe '@' h]
 showParameters :: [Parameter] -> ByteString
 showParameters []     = BS.empty
 showParameters params = BS.intercalate (B8.pack " ") (BS.empty : showp params)
-  where showp [p] | asciiToWord8 ' ' `BS.elem` p
-                    || BS.null p
-                    || BS.head p == asciiToWord8 ':' = [bsConsAscii ':' p]
-                  | otherwise = [p]
+  where showp [p]    = [bsConsAscii ':' p]
         showp (p:ps) = p : showp ps
         showp []     = []
 
