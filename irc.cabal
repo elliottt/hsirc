@@ -1,7 +1,7 @@
 name:               irc
 synopsis:           A small library for parsing IRC messages.
 description:        A set of combinators and types for parsing IRC messages.
-version:            0.6.0.1
+version:            0.6.1.0
 category:           Data, Network
 license:            BSD3
 license-file:       LICENSE
