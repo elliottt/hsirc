@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/elliottt/hsirc)](https://travis-ci.org/elliottt/hsirc)
+[![Build Status](https://travis-ci.org/elliottt/hsirc.svg)](https://travis-ci.org/elliottt/hsirc)
 
 
 [IRC][irc]
