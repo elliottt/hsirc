@@ -24,8 +24,8 @@ type Channel    = ByteString
 type Password   = ByteString
 type Reason     = ByteString
 
-mkMessage           :: ByteString -> [Parameter] -> Message
-mkMessage cmd params = Message Nothing cmd params
+mkMessage :: Command -> [Parameter] -> Message
+mkMessage = Message Nothing
 
 
 
@@ -46,11 +46,11 @@ kick c u Nothing  = mkMessage "KICK" [c,u]
 part  :: Channel -> Message
 part c = mkMessage "PART" [c]
 
-quit :: Maybe ByteString -> Message
+quit :: Maybe Reason -> Message
 quit (Just m) = mkMessage "QUIT" [m]
 quit Nothing  = mkMessage "QUIT" []
 
-privmsg    :: ByteString -> ByteString -> Message
+privmsg    :: Channel -> ByteString -> Message
 privmsg c m = mkMessage "PRIVMSG" [c,m]
 
 pong  :: ServerName -> Message
