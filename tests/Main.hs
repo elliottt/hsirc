@@ -10,7 +10,7 @@ import Data.ByteString (ByteString, append, pack)
 import Data.Word (Word8)
 import Data.Char (ord)
 
-import Control.Applicative ((<$>), (<*>), liftA)
+import Control.Applicative (liftA)
 
 import Test.HUnit
 import Test.QuickCheck
