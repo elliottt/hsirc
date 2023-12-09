@@ -146,7 +146,7 @@ message :: Parser Message
 message  = Message <$>
       optionMaybe (tokenize prefix)
   <*> command
-  <*> many (spaces *> parameter)
+  <*> many (some spaces *> parameter)
   <*  optional crlf
   <*  endOfInput
   <?> "message"
